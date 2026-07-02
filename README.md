@@ -11,10 +11,11 @@ To prioritize accessibility, the model supports end‑to‑end inference from ra
 - models/gat_gcn_attention.py: Hybrid GAT‑GCN variant with cross‑attention for comparison.
 - umami_train_validation.py: Training and validation script for UmamiFusion.
 - umami_eval.py: Unified evaluation script for testing the trained model on benchmark datasets (UMP442, UMP614), cross‑dataset validation, and the independent BIOPEP‑UWM external test set.
-- umami_t_sne.py:t‑SNE visualization of fused multimodal features across training epochs to assess class separability.
+- umami_t_sne.py: t‑SNE visualization of fused multimodal features across training epochs to assess class separability.
 - umami_saliency.py: Saliency‑based residue‑level interpretability analysis using Captum.
 - umami_auc_figure.py: ROC curve generation for comparing single‑modality, concatenated, and attention‑based fusion architectures on UMP442 and UMP614 datasets.
 - utils.py: Includes TestbedDataset for data loading, evaluation metrics, and utility functions.
+- `umami_data_distribution.py`: Generation of Figure 2, illustrating amino acid frequency distributions and sequence length distributions for the UMP442 and UMP614 datasets.
 
 # Step-by-step running:
 ##  1.Install Python libraries needed
