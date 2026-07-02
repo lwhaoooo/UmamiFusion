@@ -14,6 +14,7 @@ To prioritize accessibility, the model supports end‑to‑end inference from ra
 - umami_t_sne.py:t‑SNE visualization of fused multimodal features across training epochs to assess class separability.
 - umami_saliency.py: Saliency‑based residue‑level interpretability analysis using Captum.
 - umami_auc_figure.py: ROC curve generation for comparing single‑modality, concatenated, and attention‑based fusion architectures on UMP442 and UMP614 datasets.
+- utils.py: Includes TestbedDataset for data loading, evaluation metrics, and utility functions.
 
 # Step-by-step running:
 ##  1.Install Python libraries needed
