@@ -41,10 +41,8 @@ pip install torch-geometric
 ## 2.Create data for model 1 and model 2
 Running
 ```python
-create_GPCR_data.py
-create_data_esm.py
-esm_dict.py
-creat_data_uni-mol.py
+umami_create_data.py
+umami_create_BIOPEP.py
 ```
 ## 3.Train and verify model 1
 To train a model using training data. The model is chosen if it gains the best MSE for testing data.
