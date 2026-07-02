@@ -38,13 +38,16 @@ pip install torch-cluster==latest+cu101 -f https://pytorch-geometric.com/whl/tor
 pip install torch-spline-conv==latest+cu101 -f https://pytorch-geometric.com/whl/torch-1.4.0.html
 pip install torch-geometric
 ```
-## 2.Create data for model 1 and model 2
-Running
+## 2.Prepare Data
+Place the raw dataset files (CSV format with SEQUENCE and TASTE columns) in data/umami/.
+
+Generate the pre‑processed PyTorch Geometric data files:
 ```python
 umami_create_data.py
 umami_create_BIOPEP.py
 ```
-## 3.Train and verify model 1
+
+## 3.Train the UmamiFusion Model
 To train a model using training data. The model is chosen if it gains the best MSE for testing data.
 Running
 ```python
@@ -53,13 +56,16 @@ python train_validation_GPCR.py 0 0 0
 ```
 where the first argument is for the index of the datasets, 0/1 for 'davis' or 'kiba', respectively; the second argument is for the index of the models, 0/1/2/3 for GINConvNet, GATNet, GAT_GCN, or GCNNet, respectively; and the third argument is for the index of the cuda, 0/1 for 'cuda:0' or 'cuda:1', respectively.
 
-## 4.Train and verify model 2
+## 4.Evaluate the Trained Model
+To evaluate the trained model on the test set:
 ```python
-python esm_uni_mol_train_validation.py
+python umami_eval.py 0 0 0
 ```
-## 5.Test model 1, model 2 individually and test the integrated model
+This script reports accuracy, MCC, AUC, precision, recall, and F1 score.
+
+## 5.Saliency‑Based Residue‑Level Analysis
+To perform residue‑level interpretability on individual peptides using Captum Saliency:
 ```python
-python only_GNN_eval.py
-python only_esm_eval
-python esm_uni_mol_GIN_eval.py
+python umami_saliency.py
 ```
+Outputs are saved as PDF/PNG figures showing importance scores for each residue position.
