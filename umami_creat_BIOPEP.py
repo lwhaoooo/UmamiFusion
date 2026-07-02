@@ -1,123 +1,70 @@
-import torch
-import esm
-from torch_geometric.data import Data
-from tqdm import tqdm
 import pandas as pd
-import numpy as np
-import os
-import json, pickle
-from collections import OrderedDict
-from rdkit import Chem
-from rdkit.Chem import MolFromSmiles
-import networkx as nx
-from utils import TestbedDataset  # 假设 TestbedDataset 在 utils 中定义
-import pdb
 
-# -------------------- 配置 --------------------
-FIXED_SEQ_LENGTH = 39          # 固定序列长度
-CSV_PATH = '/root/autodl-tmp/new_protein_graph/data/umami/BIOPEP_external_set/BIOPEP_external_test_set.csv'
-OUTPUT_DATASET_NAME = 'biopep_test'   # 保存的 .pt 文件名（会在 data/processed/ 下生成 biopep_test.pt）
-ROOT_DIR = 'data'               # 根目录，与原始代码一致
+# ==================== 配置区 ====================
+# 请根据您的实际文件路径修改
+file_biopep = 'BIOPEP_umami_peptides.xlsx'
+file_ump442 = 'UMP442_umami.xlsx'
+file_ump614 = 'UMP614_umami.xlsx'
 
-# 氨基酸词汇表
-seq_voc = "ACDEFGHIKLMNPQRSTVWY"
-seq_dict = {v: (i + 1) for i, v in enumerate(seq_voc)}
-# ---------------------------------------------
+# 请指定每张表中肽序列所在的列名
+# 如果您的列名不同，请修改下面的变量
+col_biopep = 'SEQUENCE'   # BIOPEP 表中的序列列名
+col_ump442 = 'SEQUENCE'   # UMP442 表中的序列列名（也可能是 'Sequence' 或 'Peptide'）
+col_ump614 = 'SEQUENCE'   # UMP614 表中的序列列名
+# ===============================================
 
-# 1. 加载 ESM-2 模型
-model, alphabet = esm.pretrained.esm2_t6_8M_UR50D()
-batch_converter = alphabet.get_batch_converter()
-model.eval()
+# 1. 读取数据
+df_biopep = pd.read_excel(file_biopep)
+df_ump442 = pd.read_excel(file_ump442)
+df_ump614 = pd.read_excel(file_ump614)
 
-# 2. 定义函数：将 FASTA 序列转换为图数据（固定长度）
-def fasta_to_graph(fasta_sequence, fixed_length=FIXED_SEQ_LENGTH):
-    """
-    与原始代码完全一致，返回固定长度的节点特征、边、mask等。
-    """
-    original_length = len(fasta_sequence)
-    if original_length > fixed_length:
-        fasta_sequence = fasta_sequence[:fixed_length]
-        original_length = fixed_length
+# 2. 提取序列集合（去除空格，统一大写以进行比较）
+def get_sequence_set(df, col):
+    # 检查列是否存在，若不存在则抛出提示
+    if col not in df.columns:
+        raise KeyError(f"列 '{col}' 在数据中未找到，可用列: {df.columns.tolist()}")
+    # 提取并转换为大写，去除首尾空格
+    seqs = df[col].astype(str).str.strip().str.upper()
+    return set(seqs)
 
-    batch_labels, batch_strs, batch_tokens = batch_converter([(fasta_sequence, fasta_sequence)])
-    with torch.no_grad():
-        results = model(batch_tokens, repr_layers=[6], return_contacts=True)
+seq_ump442 = get_sequence_set(df_ump442, col_ump442)
+seq_ump614 = get_sequence_set(df_ump614, col_ump614)
 
-    token_representations = results["representations"][6][0]
-    contacts = results["contacts"][0]
+# 合并两个数据集的序列集合
+existing_seqs = seq_ump442 | seq_ump614
 
-    # 去掉 <cls> 和 <eos>
-    token_representations = token_representations[1:-1]
-    feature_dim = token_representations.shape[1]
+print(f"UMP442 中肽段数: {len(seq_ump442)}")
+print(f"UMP614 中肽段数: {len(seq_ump614)}")
+print(f"合并后共有 {len(existing_seqs)} 个独特肽段")
 
-    # 填充到固定长度
-    if original_length < fixed_length:
-        padding_length = fixed_length - original_length
-        padding_features = torch.zeros(padding_length, feature_dim)
-        node_features_esm = torch.cat([token_representations, padding_features], dim=0)
-    else:
-        node_features_esm = token_representations
+# 3. 过滤 BIOPEP 中的数据，保留未在已有集合中出现的
+def filter_biopep(df, col, existing_set):
+    # 将 BIOPEP 序列标准化
+    df['seq_upper'] = df[col].astype(str).str.strip().str.upper()
+    # 保留不在 existing_set 中的
+    mask = ~df['seq_upper'].isin(existing_set)
+    filtered = df[mask].copy()
+    # 删除临时列
+    filtered.drop(columns=['seq_upper'], inplace=True)
+    return filtered
 
-    # mask
-    mask = torch.zeros(fixed_length)
-    mask[:original_length] = 1
+df_filtered = filter_biopep(df_biopep, col_biopep, existing_seqs)
 
-    # 构建接触图（仅真实节点）
-    contact_binary = torch.zeros(fixed_length, fixed_length)
-    contact_binary[:original_length, :original_length] = contacts[:original_length, :original_length].clone()
-    # 添加相邻边
-    for i in range(original_length - 1):
-        contact_binary[i, i + 1] = 1
-        contact_binary[i + 1, i] = 1
+# 4. 重新编号（从0开始）
+df_filtered.reset_index(drop=True, inplace=True)
+df_filtered['Column1'] = range(len(df_filtered))
 
-    edge_list = torch.nonzero(contact_binary > 0.5)
-    edge_weights = contact_binary[edge_list[:, 0], edge_list[:, 1]]
-    edge_index = edge_list.t().contiguous()
-    edge_attr = edge_weights.view(-1, 1).float()
+# 确保列顺序为：Column1, SEQUENCE, TASTE
+# 保留原有列名，如果有其他列则仅保留这三列
+output_columns = ['Column1', col_biopep, 'TASTE']
+# 如果 TASTE 列不存在，则新建一个全为1的列
+if 'TASTE' not in df_filtered.columns:
+    df_filtered['TASTE'] = 1
 
-    return fixed_length, node_features_esm, edge_index, edge_attr, mask
+df_final = df_filtered[output_columns]
 
-# 3. 序列整数编码函数
-def seq_cat(prot):
-    x = np.zeros(FIXED_SEQ_LENGTH)
-    for i, ch in enumerate(prot[:FIXED_SEQ_LENGTH]):
-        x[i] = seq_dict.get(ch, 0)
-    return x
-
-# 4. 读取外部测试集 CSV
-df = pd.read_csv(CSV_PATH)
-peps = list(df['SEQUENCE'])
-Y = list(df['TASTE'])
-
-print(f"读取外部测试集：共 {len(peps)} 条肽序列")
-
-# 5. 为所有序列生成图数据（只处理一次，供 TestbedDataset 使用）
-print("正在为外部测试集生成固定长度的图数据...")
-fasta_graph = {}
-for seq in tqdm(peps, desc="生成图数据"):
-    c_size, features, edge_index, edge_attr, mask = fasta_to_graph(seq, fixed_length=FIXED_SEQ_LENGTH)
-    if c_size is not None:
-        fasta_graph[seq] = (c_size, features, edge_index, edge_attr, mask)
-
-print(f"成功生成 {len(fasta_graph)} 个图数据，每个图节点数固定为 {FIXED_SEQ_LENGTH}")
-
-# 6. 生成序列的整数编码特征（作为辅助输入）
-XT = [seq_cat(t) for t in peps]
-embeding = np.asarray(XT)
-Y = np.asarray(Y)
-
-# 7. 使用 TestbedDataset 创建并保存 .pt 文件
-processed_file = os.path.join(ROOT_DIR, 'processed', f'{OUTPUT_DATASET_NAME}.pt')
-if not os.path.isfile(processed_file):
-    print(f"正在创建 {processed_file} ...")
-    data = TestbedDataset(
-        root=ROOT_DIR,
-        dataset=OUTPUT_DATASET_NAME,
-        xd=peps,
-        xt=embeding,
-        y=Y,
-        fasta_graph=fasta_graph
-    )
-    print(f"外部测试集数据已保存至 {processed_file}")
-else:
-    print(f"{processed_file} 已存在，跳过创建。")
+# 5. 保存结果
+output_file = 'BIOPEP_external_test_set.xlsx'
+df_final.to_excel(output_file, index=False)
+print(f"过滤完成！原始 BIOPEP 中有 {len(df_biopep)} 条，保留了 {len(df_final)} 条未在 UMP442 或 UMP614 中出现的肽段。")
+print(f"结果已保存至: {output_file}")
