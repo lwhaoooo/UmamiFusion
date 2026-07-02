@@ -25,11 +25,12 @@ To prioritize accessibility, the model supports end‑to‑end inference from ra
 # Step-by-step running:
 ##  1.Install Python libraries needed
 - Install rdkit: conda install -y -c conda-forge rdkit
-- Install uni-mol: pip install unimol_tools, pip install huggingface_hub
+- pip install numpy pandas scikit-learn matplotlib seaborn tqdm
+- pip install shap captum
 - Install esm: pip install fair-esm, esm needs to download esm2_t33_650M_UR50D.pt and esm2_t33_650M_UR50D-contact-regression.pt
 ```python
-conda create -n engci python=3
-conda activate engci
+conda create -n umamifusion python=3
+conda activate umamifusion
 conda install -y -c conda-forge rdkit
 conda install pytorch torchvision cudatoolkit -c pytorch
 pip install torch-scatter==latest+cu101 -f https://pytorch-geometric.com/whl/torch-1.4.0.html
