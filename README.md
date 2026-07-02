@@ -16,6 +16,7 @@ To prioritize accessibility, the model supports end‑to‑end inference from ra
 - umami_auc_figure.py: ROC curve generation for comparing single‑modality, concatenated, and attention‑based fusion architectures on UMP442 and UMP614 datasets.
 - utils.py: Includes TestbedDataset for data loading, evaluation metrics, and utility functions.
 - `umami_data_distribution.py`: Generation of Figure 2, illustrating amino acid frequency distributions and sequence length distributions for the UMP442 and UMP614 datasets.
+- `umami_creat_BIOPEP.py`: Construction of the independent BIOPEP‑UWM external test set, including peptide extraction, de‑duplication against UMP442 and UMP614, and filtering of non‑standard amino acid residues.
 
 # Step-by-step running:
 ##  1.Install Python libraries needed
