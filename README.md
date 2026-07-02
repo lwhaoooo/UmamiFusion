@@ -4,17 +4,17 @@ UmamiFusion is a state‑of‑the‑art computational tool designed for predicti
 To prioritize accessibility, the model supports end‑to‑end inference from raw peptide sequences without requiring experimental structural determination. The source code and pre‑trained models are publicly available to facilitate reproducibility and further research in peptide bioinformatics and food flavor optimization.
 
 # Source codes:
-- umami_create_data.py: Process raw peptide sequences and ESM2‑derived graph features into PyTorch Geometric data format.
-- models/gcn_attention.py: Definition of the UmamiFusion model (GCNConvNet with bidirectional cross‑attention).
-- models/gin_attention.py: GIN variant with cross‑attention for comparison.
-- models/gat_attention.py: GAT variant with cross‑attention for comparison.
-- models/gat_gcn_attention.py: Hybrid GAT‑GCN variant with cross‑attention for comparison.
-- umami_train_validation.py: Training and validation script for UmamiFusion.
-- umami_eval.py: Unified evaluation script for testing the trained model on benchmark datasets (UMP442, UMP614), cross‑dataset validation, and the independent BIOPEP‑UWM external test set.
-- umami_t_sne.py: t‑SNE visualization of fused multimodal features across training epochs to assess class separability.
-- umami_saliency.py: Saliency‑based residue‑level interpretability analysis using Captum.
-- umami_auc_figure.py: ROC curve generation for comparing single‑modality, concatenated, and attention‑based fusion architectures on UMP442 and UMP614 datasets.
-- utils.py: Includes TestbedDataset for data loading, evaluation metrics, and utility functions.
+- `umami_create_data.py`: Process raw peptide sequences and ESM2‑derived graph features into PyTorch Geometric data format.
+- `models/gcn_attention.py`: Definition of the UmamiFusion model (GCNConvNet with bidirectional cross‑attention).
+- `models/gin_attention.py`: GIN variant with cross‑attention for comparison.
+- `models/gat_attention.py`: GAT variant with cross‑attention for comparison.
+- `models/gat_gcn_attention.py`: Hybrid GAT‑GCN variant with cross‑attention for comparison.
+- `umami_train_validation.py`: Training and validation script for UmamiFusion.
+- `umami_eval.py`: Unified evaluation script for testing the trained model on benchmark datasets (UMP442, UMP614), cross‑dataset validation, and the independent BIOPEP‑UWM external test set.
+- `umami_t_sne.py`: t‑SNE visualization of fused multimodal features across training epochs to assess class separability.
+- `umami_saliency.py`: Saliency‑based residue‑level interpretability analysis using Captum.
+- `umami_auc_figure.py`: ROC curve generation for comparing single‑modality, concatenated, and attention‑based fusion architectures on UMP442 and UMP614 datasets.
+- `utils.py`: Includes TestbedDataset for data loading, evaluation metrics, and utility functions.
 - `umami_data_distribution.py`: Generation of Figure 2, illustrating amino acid frequency distributions and sequence length distributions for the UMP442 and UMP614 datasets.
 - `umami_creat_BIOPEP.py`: Construction of the independent BIOPEP‑UWM external test set, including peptide extraction, de‑duplication against UMP442 and UMP614, and filtering of non‑standard amino acid residues.
 
